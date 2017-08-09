@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 
 <!--
  * mod_dav_svn xsl2html index transformation script
@@ -20,7 +20,6 @@
   <xsl:template match="svn">
     <html>
       <head>
-        <meta charset="utf-8" />
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>
@@ -36,6 +35,12 @@
         <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
         <script type="text/javascript" src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
         <link type="text/css" rel="stylesheet" href="/svn/svnindex/svnindex.css" />
+        <style>
+          .updir{list-style-type:none;}
+          .dir{list-style-type:disc;}
+          .file{list-style-type:circle;}
+          .dir, .file {margin-top: 1em;margin-bottom: 1em;}
+        </style>
       </head>
       <body>
         <div class="svn">
@@ -59,10 +64,20 @@
       </xsl:call-template>
     </h3>
     <ul>
+      <xsl:apply-templates select="updir"/>
       <xsl:apply-templates select="dir"/>
       <xsl:apply-templates select="file"/>
     </ul>
 
+  </xsl:template>
+
+  <xsl:template match="updir">
+    <li class="updir">
+      <xsl:element name="a">
+        <xsl:attribute name="href">..</xsl:attribute>
+        <xsl:attribute name="class">glyphicon glyphicon-arrow-left</xsl:attribute>
+      </xsl:element>
+    </li>
   </xsl:template>
 
   <xsl:template match="dir">
@@ -96,7 +111,7 @@
 
     <xsl:choose>
       <xsl:when test="substring-after($inputString,'/') != ''">
-        /
+        <xsl:text> / </xsl:text>
         <xsl:call-template name="insertAnchor">
           <xsl:with-param name="url" select="concat($lastPart, '/', substring-before($inputString,'/'))"/>
           <xsl:with-param name="title" select="substring-before($inputString,'/')"/>
@@ -117,15 +132,22 @@
           <xsl:otherwise>
             <!-- last recursion -->
             <span class="pseudo">
+
               <xsl:if test="@base">
-              /
+              <xsl:text> / </xsl:text>
               </xsl:if>
-              <xsl:value-of select="translate($inputString, '/', '')"/>
+              <xsl:call-template name="insertAnchor">
+                <xsl:with-param name="url" select="concat($lastPart, '/', translate($inputString, '/', ''))"/>
+                <xsl:with-param name="title" select="translate($inputString, '/', '')"/>
+              </xsl:call-template>
+
               <xsl:if test="@base">
+                <xsl:text> </xsl:text>
                 <span class="badge">
                   <xsl:value-of select="@rev"/>
                 </span>
               </xsl:if>
+
               </span>
           </xsl:otherwise>
         </xsl:choose>
