@@ -1,21 +1,22 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0"?>
 
 <!--
- * mod_dav_svn xsl2html index transformation script
- * derived from the subversion distrib files
- *
- * @author glaszig at gmail dot com
- * @link github.com/glaszig
+ * @author peterduh at gmail dot com
+ * @link github.com/pduh/svn
 -->
 
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
 
-  <xsl:output method="html"/>
-
-  <!-- DEFINE YOUR SVN WEB ROOT BELOW -->
-  <xsl:variable name="svnroot" select="'/'" />
+  <xsl:output method="html"
+    doctype-public="-//W3C//DTD XHTML 1.1//EN"
+    doctype-system="http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd"
+    omit-xml-declaration="yes"
+    encoding="UTF-8"
+    indent="yes" />
 
   <xsl:template match="*"/>
+
+<!-- svn -->
 
   <xsl:template match="svn">
     <html>
@@ -34,13 +35,13 @@
         <link type="text/css" rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous" />
         <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
         <script type="text/javascript" src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-        <link type="text/css" rel="stylesheet" href="/svn/svnindex/svnindex.css" />
-        <style>
-          .updir{list-style-type:none;}
-          .dir{list-style-type:disc;}
-          .file{list-style-type:circle;}
-          .dir, .file {margin-top: 1em;margin-bottom: 1em;}
-        </style>
+        <!-- link type="text/css" rel="stylesheet" href="/svn/svnindex/svnindex.css" / -->
+<style>
+.updir{list-style-type:none;}
+.dir{list-style-type:disc;}
+.file{list-style-type:circle;}
+.dir, .file {margin-top:1em;margin-bottom:1em;}
+</style>
       </head>
       <body>
         <div class="svn">
@@ -50,19 +51,42 @@
     </html>
   </xsl:template>
 
+<!-- index -->
+
   <xsl:template match="index">
-    <h3 class="path">
-      <xsl:if test="@base">
-        <xsl:element name="a">
-          <xsl:attribute name="href">/</xsl:attribute>
-          <xsl:attribute name="class">glyphicon glyphicon-home</xsl:attribute>
-        </xsl:element>
-      </xsl:if>
-      <xsl:call-template name="SplitText">
-        <xsl:with-param name="inputString" select="substring(concat(@base, @path), 1)"/>
-        <xsl:with-param name="lastPart" select="substring($svnroot, 2)"/>
-      </xsl:call-template>
-    </h3>
+
+    <nav class="navbar navbar-inverse">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <xsl:if test="@base != '' and @path != '/'">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-navbar-collapse-1" aria-expanded="false">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+          </xsl:if>
+          <a class="navbar-brand" href="/"><span class="glyphicon glyphicon-home"></span></a>
+          <xsl:if test="@base != ''">
+            <xsl:call-template name="updir_link" />
+            <xsl:call-template name="CurLink"/>
+            <a class="navbar-brand visible-xs-block"><span class="badge"><xsl:value-of select="@rev"/></span></a>
+          </xsl:if>
+        </div>
+
+        <div class="collapse navbar-collapse" id="bs-navbar-collapse-1">
+          <ul class="nav navbar-nav">
+            <xsl:call-template name="NavLink"/>
+            <xsl:if test="@base != ''">
+              <li class="hidden-xs">
+                <p class="navbar-text"><span class="badge"><xsl:value-of select="@rev"/></span></p>
+              </li>
+            </xsl:if>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
     <ul>
       <xsl:apply-templates select="updir"/>
       <xsl:apply-templates select="dir"/>
@@ -71,103 +95,154 @@
 
   </xsl:template>
 
-  <xsl:template match="updir">
-    <li class="updir">
-      <xsl:element name="a">
-        <xsl:attribute name="href">..</xsl:attribute>
-        <xsl:attribute name="class">glyphicon glyphicon-arrow-left</xsl:attribute>
-      </xsl:element>
-    </li>
+<!-- updir_link -->
+
+  <xsl:template name="updir_link">
+    <xsl:element name="a">
+      <xsl:attribute name="class">glyphicon glyphicon-arrow-left navbar-brand visible-xs-block</xsl:attribute>
+      <xsl:attribute name="href">
+        <xsl:value-of select="/svn/index/updir/@href"/>
+      </xsl:attribute>
+    </xsl:element>
   </xsl:template>
 
-  <xsl:template match="dir">
-    <li class="dir">
+<!-- updir -->
+
+  <xsl:template match="updir">
+    <xsl:element name="li">
+      <xsl:attribute name="class">updir hidden-xs</xsl:attribute>
       <xsl:element name="a">
+        <xsl:attribute name="class">glyphicon glyphicon-arrow-left</xsl:attribute>
         <xsl:attribute name="href">
           <xsl:value-of select="@href"/>
         </xsl:attribute>
+      </xsl:element>
+    </xsl:element>
+
+  </xsl:template>
+
+<!-- dir -->
+
+  <xsl:template match="dir">
+    <xsl:element name="li">
+      <xsl:attribute name="class">dir</xsl:attribute>
+      <xsl:element name="a">
         <xsl:attribute name="class">text-primary</xsl:attribute>
+        <xsl:attribute name="href">
+          <xsl:value-of select="@href"/>
+        </xsl:attribute>
         <xsl:value-of select="@name"/>
         <xsl:text>/</xsl:text>
       </xsl:element>
-    </li>
+    </xsl:element>
   </xsl:template>
 
+<!-- file -->
+
   <xsl:template match="file">
-    <li class="file">
+    <xsl:element name="li">
+      <xsl:attribute name="class">file</xsl:attribute>
       <xsl:element name="a">
+        <xsl:attribute name="class">text-success</xsl:attribute>
         <xsl:attribute name="href">
           <xsl:value-of select="@href"/>
         </xsl:attribute>
-        <xsl:attribute name="class">text-success</xsl:attribute>
         <xsl:value-of select="@name"/>
       </xsl:element>
-    </li>
-  </xsl:template>
-
-  <xsl:template name="SplitText">
-    <xsl:param name="inputString"/>
-    <xsl:param name="lastPart" />
-
-    <xsl:choose>
-      <xsl:when test="substring-after($inputString,'/') != ''">
-        <xsl:text> / </xsl:text>
-        <xsl:call-template name="insertAnchor">
-          <xsl:with-param name="url" select="concat($lastPart, '/', substring-before($inputString,'/'))"/>
-          <xsl:with-param name="title" select="substring-before($inputString,'/')"/>
-        </xsl:call-template>
-
-        <!-- recursion -->
-        <xsl:call-template name="SplitText">
-          <xsl:with-param name="inputString" select="substring-after($inputString,'/')"/>
-          <xsl:with-param name="lastPart" select="concat($lastPart, '/',  substring-before($inputString,'/'))" />
-        </xsl:call-template>
-
-      </xsl:when>
-      <xsl:otherwise>
-        <xsl:choose>
-          <xsl:when test="$inputString = ''">
-            <xsl:text>...</xsl:text>
-          </xsl:when>
-          <xsl:otherwise>
-            <!-- last recursion -->
-            <span class="pseudo">
-
-              <xsl:if test="@base">
-              <xsl:text> / </xsl:text>
-              </xsl:if>
-              <xsl:call-template name="insertAnchor">
-                <xsl:with-param name="url" select="concat($lastPart, '/', translate($inputString, '/', ''))"/>
-                <xsl:with-param name="title" select="translate($inputString, '/', '')"/>
-              </xsl:call-template>
-
-              <xsl:if test="@base">
-                <xsl:text> </xsl:text>
-                <span class="badge">
-                  <xsl:value-of select="@rev"/>
-                </span>
-              </xsl:if>
-
-              </span>
-          </xsl:otherwise>
-        </xsl:choose>
-      </xsl:otherwise>
-    </xsl:choose>
-
-  </xsl:template>
-
-  <!-- template for inserting an html a element -->
-  <xsl:template name="insertAnchor">
-    <xsl:param name="url" />
-    <xsl:param name="title" />
-
-    <xsl:element name="a">
-      <!-- href attribute -->
-      <xsl:attribute name="href">
-        <xsl:value-of select="$url"/>
-      </xsl:attribute>
-      <xsl:value-of select="$title"/>
     </xsl:element>
+  </xsl:template>
+
+<!-- NavLink -->
+
+  <xsl:template name="NavLink">
+    <xsl:call-template name="breadcrumbs">
+      <xsl:with-param name="str" select="concat(@base, @path)" />
+      <xsl:with-param name="sep" select="'/'" />
+      <xsl:with-param name="bas" select="''" />
+    </xsl:call-template>
+  </xsl:template>
+
+<!-- breadcrumbs -->
+
+  <xsl:template name="breadcrumbs">
+    <xsl:param name="str" />
+    <xsl:param name="sep" />
+    <xsl:param name="bas" />
+    <xsl:variable name="first-item"
+      select="normalize-space( substring-before( concat( $str, $sep), $sep))" />
+    <xsl:variable name="rest" select="normalize-space( substring-after( $str, $sep))" />
+
+    <xsl:if test="$first-item">
+      <xsl:element name="li">
+        <xsl:element name="a">
+          <xsl:if test="$rest = ''">
+            <xsl:attribute name="class">hidden-xs</xsl:attribute>
+          </xsl:if>
+          <xsl:if test="@base != ''">
+            <xsl:attribute name="href">
+              <xsl:value-of select="concat($bas, '/', $first-item)"/>
+            </xsl:attribute>
+          </xsl:if>
+          <xsl:value-of select="$first-item" />
+        </xsl:element>
+      </xsl:element>
+
+      <xsl:call-template name="breadcrumbs">
+        <xsl:with-param name="str" select="$rest" />
+        <xsl:with-param name="sep" select="$sep"/>
+        <xsl:with-param name="bas" select="concat($bas, '/', $first-item)"/>
+      </xsl:call-template>
+    </xsl:if>
+
+  </xsl:template>
+
+
+<!-- CurLink  -->
+
+  <xsl:template name="CurLink">
+   <xsl:call-template name="get_last_item">
+     <xsl:with-param name="str" select="concat(@base,@path)" />
+     <xsl:with-param name="sep" select="'/'" />
+     <xsl:with-param name="bas" select="''" />
+   </xsl:call-template>
+
+  </xsl:template>
+
+<!-- get_item -->
+
+  <xsl:template name="get_last_item">
+    <xsl:param name="str" />
+    <xsl:param name="sep" />
+    <xsl:param name="bas" />
+
+    <xsl:variable name="first-item"
+      select="normalize-space( substring-before( concat( $str, $sep), $sep))" />
+    <xsl:variable name="rest" select="normalize-space( substring-after( $str, $sep))" />
+    <xsl:if test="$first-item">
+      <xsl:choose>
+
+        <xsl:when test="$rest = ''">
+            <xsl:element name="a">
+              <xsl:attribute name="href">
+                <xsl:value-of select="concat($bas, '/', $first-item)"/>
+              </xsl:attribute>
+              <xsl:attribute name="class">navbar-brand visible-xs-block</xsl:attribute>
+              <xsl:value-of select="$first-item" />
+            </xsl:element>
+        </xsl:when>
+
+        <xsl:otherwise>
+          <xsl:call-template name="get_last_item">
+            <xsl:with-param name="str" select="$rest"/>
+            <xsl:with-param name="sep" select="$sep"/>
+            <xsl:with-param name="bas" select="concat($bas, '/', $first-item)"/>
+          </xsl:call-template>
+        </xsl:otherwise>
+
+      </xsl:choose>
+
+    </xsl:if>
+
   </xsl:template>
 
 </xsl:stylesheet>
